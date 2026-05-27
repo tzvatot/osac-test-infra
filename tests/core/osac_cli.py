@@ -102,8 +102,23 @@ class OsacCLI:
     def get_unchecked(self, resource: str) -> tuple[str, int]:
         return run_unchecked(self.binary, "get", resource)
 
-    def create_cluster_with_catalog_item(self, *, catalog_item: str, name: str) -> str:
-        stdout: str = run(self.binary, "create", "cluster", "--catalog-item", catalog_item, "--name", name)
+    def create_cluster_with_catalog_item(
+        self,
+        *,
+        catalog_item: str,
+        name: str,
+        release_image: str | None = None,
+        pull_secret: str | None = None,
+        ssh_public_key: str | None = None,
+    ) -> str:
+        args: list[str] = [self.binary, "create", "cluster", "--catalog-item", catalog_item, "--name", name]
+        if release_image is not None:
+            args.extend(["--release-image", release_image])
+        if pull_secret is not None:
+            args.extend(["--pull-secret", pull_secret])
+        if ssh_public_key is not None:
+            args.extend(["--ssh-public-key", ssh_public_key])
+        stdout: str = run(*args)
         match: re.Match[str] | None = re.search(r"'([^']+)'", stdout)
         assert match is not None, f"Failed to parse UUID from CLI output: {stdout}"
         return match.group(1)
